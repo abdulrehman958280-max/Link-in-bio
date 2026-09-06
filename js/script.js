@@ -144,7 +144,7 @@ document.addEventListener("DOMContentLoaded", () => {
     bgVideo.muted = false;
     bgVideo.play();
     
-    // -- OPTIMIZED AUDIO BEAT DETECTION --
+    // -- ENHANCED AUDIO BEAT DETECTION --
     try {
       const AudioContext = window.AudioContext || window.webkitAudioContext;
       if (AudioContext && !window.audioCtx) {
@@ -154,63 +154,60 @@ document.addEventListener("DOMContentLoaded", () => {
         const gainNode = window.audioCtx.createGain();
         
         window.audioGainNode = gainNode;
-        analyser.fftSize = 64; // Low fftSize for performance
+        // 256 gives better frequency grouping for kicks/bass without being too slow
+        analyser.fftSize = 256; 
+        analyser.smoothingTimeConstant = 0.7; // Faster response to drops
         
         source.connect(analyser);
         analyser.connect(gainNode);
         gainNode.connect(window.audioCtx.destination);
         
-        const bufferLength = analyser.frequencyBinCount;
-        const dataArray = new Uint8Array(bufferLength);
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
         
         let lastBeatTime = 0;
-        const minTimeBetweenBeats = 300; // Allow slightly faster consecutive beats
+        let minTimeBetweenBeats = 280; // slightly strict to avoid double triggers
+        let energyHistory = [];
         
-        // Arrays to track volume history for dynamic thresholding
-        const energyHistory = [];
-        const historySize = 20; 
-        
-        setInterval(() => {
+        function detectBeat() {
+          requestAnimationFrame(detectBeat);
           if (bgVideo.paused || bgVideo.muted) return;
           
           analyser.getByteFrequencyData(dataArray);
           
-          // Focus strictly on bass/kick frequencies (first 3 bins)
+          // Focus strictly on Kick/Bass bins (bins 1 to 5 cover ~80Hz to 400Hz)
           let currentEnergy = 0;
-          for(let i = 0; i < 3; i++) {
+          for(let i = 1; i <= 5; i++) {
              currentEnergy += dataArray[i];
           }
-          currentEnergy = currentEnergy / 3;
+          currentEnergy /= 5;
 
-          // Push to history array to calculate average energy
           energyHistory.push(currentEnergy);
-          if (energyHistory.length > historySize) {
-             energyHistory.shift();
-          }
+          if (energyHistory.length > 25) energyHistory.shift();
 
-          // Calculate average energy over the recent past
-          const avgEnergy = energyHistory.reduce((a, b) => a + b, 0) / energyHistory.length;
+          // Calculate moving average
+          let avgEnergy = energyHistory.reduce((a, b) => a + b, 0) / energyHistory.length;
           
-          // A beat is triggered if the current energy is significantly higher than the recent average 
-          // (dynamic threshold) AND above a minimum base threshold
-          const beatThresholdMultipler = 1.35; // 35% louder than average
-          const minimumBaseThreshold = 180;
-          
-          const isBeat = currentEnergy > (avgEnergy * beatThresholdMultipler) && currentEnergy > minimumBaseThreshold;
+          // Dynamic threshold: Must be 25% higher than average, and at least 150 volume
+          let isBeat = currentEnergy > (avgEnergy * 1.25) && currentEnergy > 150;
 
           const now = performance.now();
           if (isBeat && (now - lastBeatTime) > minTimeBetweenBeats) {
             lastBeatTime = now;
             
-            // Haptic trigger perfectly synced inside the beat block
-            if (navigator.vibrate) navigator.vibrate(25);
+            if (navigator.vibrate) navigator.vibrate(25); // Haptic feedback
             
+            // Force CSS reflow to restart animation on every hit perfectly
+            profileCard.classList.remove("beat-hit");
+            void profileCard.offsetWidth; 
             profileCard.classList.add("beat-hit");
+            
             setTimeout(() => {
               profileCard.classList.remove("beat-hit");
-            }, 100); 
+            }, 150); 
           }
-        }, 30); // 30ms interval allows precise synchronization without massive CPU cost
+        }
+        
+        detectBeat();
         
         if (window.audioCtx.state === 'suspended') {
           window.audioCtx.resume();
