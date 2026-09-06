@@ -71,11 +71,11 @@ const CONFIG = {
   // ----------------------------------------------------------
   socialLinks: [
     { name: "Instagram", url: "https://www.instagram.com/_a.r.malik_/?utm_source=gr&r=nametag",         icon: "assets/icons/instagram.png" },
-    { name: "Spotify",   url: "https://open.spotify.com/user", icon: "assets/icons/spotify.png"   },
+    { name: "Discord",   url: "https://discord.com/users/Jofagg_", icon: "assets/icons/discord.png"   },
     { name: "TikTok",    url: "https://www.tiktok.com/user",           icon: "assets/icons/tiktok.png"    },
     { name: "OnlyFans",  url: "https://onlyfans.com/user",          icon: "assets/icons/onlyfans.png"  },
     { name: "Github",  url: "https://github.com/user",          icon: "assets/icons/github.png"  },
-,
+
   ],
   iconSize:         "36px",
   iconBorderRadius: "8px",
