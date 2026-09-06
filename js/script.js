@@ -88,10 +88,20 @@ document.addEventListener("DOMContentLoaded", () => {
     icon.alt = link.name;
 
     a.appendChild(icon);
+    
+    // Add haptic feedback on click
+    a.addEventListener("mousedown", () => {
+      if (navigator.vibrate) navigator.vibrate(10);
+    });
+
     socialContainer.appendChild(a);
   });
 
-  // -- Discord presence --
+  // Haptic feedback for the profile card
+  const profileCard = document.getElementById("profile-card");
+  profileCard.addEventListener("mousedown", () => {
+    if (navigator.vibrate) navigator.vibrate(10);
+  });
   document.getElementById("discord-username").textContent = CONFIG.discordUsername;
   document.getElementById("discord-activity").textContent = CONFIG.discordStatus;
   document.getElementById("discord-avatar").src           = CONFIG.discordAvatar;
@@ -125,13 +135,70 @@ document.addEventListener("DOMContentLoaded", () => {
   // --------------------------------------------------------
   // Entry screen click — starts everything
   // --------------------------------------------------------
-  const profileCard = document.getElementById("profile-card");
 
   document.getElementById("entry-screen").addEventListener("click", (e) => {
+    if (navigator.vibrate) navigator.vibrate(20); // Small haptic on entry
+    
     e.currentTarget.classList.add("hidden");
 
     bgVideo.muted = false;
     bgVideo.play();
+    
+    // Initialize Web Audio API for beat detection
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const source = audioCtx.createMediaElementSource(bgVideo);
+      const analyser = audioCtx.createAnalyser();
+      const gainNode = audioCtx.createGain();
+      window.audioGainNode = gainNode; // Export to global for volume button
+      
+      analyser.fftSize = 256;
+      source.connect(analyser);
+      analyser.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+      
+      let lastBeatTime = 0;
+      const beatThreshold = 220; // Volume threshold for beat (0-255)
+      const minTimeBetweenBeats = 300; // ms
+      
+      function detectBeat() {
+        analyser.getByteFrequencyData(dataArray);
+        
+        // Average the bass frequencies (first few bins)
+        let bassSum = 0;
+        const bassBins = 5;
+        for (let i = 0; i < bassBins; i++) {
+          bassSum += dataArray[i];
+        }
+        const bassAverage = bassSum / bassBins;
+
+        const now = performance.now();
+        if (bassAverage > beatThreshold && (now - lastBeatTime) > minTimeBetweenBeats) {
+          lastBeatTime = now;
+          
+          if (navigator.vibrate) navigator.vibrate(30); // Haptic on beat
+          
+          // Trigger CSS animation
+          profileCard.classList.add("beat-hit");
+          setTimeout(() => {
+            profileCard.classList.remove("beat-hit");
+          }, 120);
+        }
+        
+        requestAnimationFrame(detectBeat);
+      }
+      
+      // Resume context if suspended
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      detectBeat();
+    } catch (err) {
+      console.warn("Beat detection audio context failed:", err);
+    }
 
     initParticles();
 
@@ -139,7 +206,7 @@ document.addEventListener("DOMContentLoaded", () => {
       profileCard.classList.add("revealed");
       initTypewriter(document.getElementById("profile-status"), CONFIG.statusText, 60);
     }, CONFIG.cardRevealDelay);
-  });
+  }, { once: true });
 
   // --------------------------------------------------------
   // 3D card tilt on mouse move
@@ -178,6 +245,10 @@ document.addEventListener("DOMContentLoaded", () => {
   volumeBtn.addEventListener("click", () => {
     bgVideo.muted = !bgVideo.muted;
     volumeBtn.textContent = bgVideo.muted ? "🔇" : "🔊";
+    
+    if (window.audioGainNode) {
+      window.audioGainNode.gain.value = bgVideo.muted ? 0 : 1;
+    }
   });
 
 });
