@@ -7,11 +7,11 @@ const CONFIG = {
   // ----------------------------------------------------------
   // PROFILE
   // ----------------------------------------------------------
-  profileName:   "𝔍𝔢𝔣𝔢𝔯",      // name shown on the card
+  profileName:   "Abdul Rahman",      // name shown on the card
   nameTooltip:   "Oñooo",         // tooltip on hover over the name
   nameEffect:    "noise",         // "noise" = TV interference | "none" = plain text
   statusText:    "🏃🏿‍➡️ Isso é muita areia hoje...", // text below the name (typewriter effect)
-  tabTitle:      "@𝔍𝔢𝔣𝔢𝔯",      // animated browser tab title
+  tabTitle:      "@Abdul Rahman",      // animated browser tab title
   entrySymbol:   "⛧",            // symbol shown on the entry screen
 
   // ----------------------------------------------------------
@@ -44,7 +44,18 @@ const CONFIG = {
   badgeContainerBorder:     "2px solid rgba(172, 200, 255, 0.04)",
 
   // ----------------------------------------------------------
-  // DISCORD (static — no API, edit manually)
+  // DISCORD REAL-TIME SETTINGS (LANYARD API)
+  // ----------------------------------------------------------
+  // To make this real-time:
+  // 1. Join the Lanyard Discord server (discord.gg/lanyard)
+  // 2. Put your Discord User ID below
+  // 3. Set useRealtimeDiscord to true
+  useRealtimeDiscord: true,
+  discordId: "1332618299678265356", // e.g. "123456789012345678"
+
+  // ----------------------------------------------------------
+  // DISCORD (STATIC FALLBACK)
+  // Used if useRealtimeDiscord is false or Lanyard cannot connect
   // ----------------------------------------------------------
   discordUsername: "Jofagg_",
   discordStatus:   "acalme-se vadia...",
@@ -59,7 +70,7 @@ const CONFIG = {
   // Add, remove or reorder. "icon" = path inside assets/icons/
   // ----------------------------------------------------------
   socialLinks: [
-    { name: "Instagram", url: "https://instagram.com/user",         icon: "assets/icons/instagram.png" },
+    { name: "Instagram", url: "https://www.instagram.com/_a.r.malik_/?utm_source=gr&r=nametag",         icon: "assets/icons/instagram.png" },
     { name: "Spotify",   url: "https://open.spotify.com/user", icon: "assets/icons/spotify.png"   },
     { name: "TikTok",    url: "https://www.tiktok.com/user",           icon: "assets/icons/tiktok.png"    },
     { name: "OnlyFans",  url: "https://onlyfans.com/user",          icon: "assets/icons/onlyfans.png"  },

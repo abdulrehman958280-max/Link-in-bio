@@ -105,6 +105,10 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("discord-status-icon").src =
     statusIconMap[CONFIG.discordPresenceStatus] || statusIconMap.offline;
 
+  if (CONFIG.useRealtimeDiscord) {
+    initLanyard();
+  }
+
   // -- Custom cursor --
   if (CONFIG.customCursor) {
     const style = document.createElement("style");
@@ -242,8 +246,6 @@ function initTabTitle(text) {
 
 // ============================================================
 // STATUS TYPEWRITER
-// Types the status text, pauses, deletes, and repeats.
-// The blinking cursor "|" is added via CSS (::after on #profile-status).
 // ============================================================
 function initTypewriter(el, text, speed = 80) {
   let i          = 0;
@@ -440,4 +442,94 @@ function initCursorTrail() {
   resize();
   window.addEventListener("resize", resize);
   requestAnimationFrame(draw);
+}
+
+// ============================================================
+// LANYARD API (REAL-TIME DISCORD PRESENCE)
+// ============================================================
+function initLanyard() {
+  if (!CONFIG.discordId || CONFIG.discordId === "YOUR_DISCORD_ID_HERE") {
+    console.warn("Lanyard: Please set your discordId in config.js");
+    return;
+  }
+
+  let lanyardWs = null;
+  const statusIconMap = {
+    online:  "assets/icons/status/online.png",
+    idle:    "assets/icons/status/inactive.png",
+    dnd:     "assets/icons/status/busy.png",
+    offline: "assets/icons/status/offline.png",
+  };
+
+  function connectLanyard() {
+    lanyardWs = new WebSocket('wss://api.lanyard.rest/socket');
+
+    lanyardWs.onmessage = (event) => {
+      const msg = JSON.parse(event.data);
+
+      if (msg.op === 1) { // Hello event, subscribe to updates
+        lanyardWs.send(JSON.stringify({
+          op: 2,
+          d: { subscribe_to_id: CONFIG.discordId }
+        }));
+        
+        // Start heartbeat
+        setInterval(() => {
+          if (lanyardWs.readyState === WebSocket.OPEN) {
+            lanyardWs.send(JSON.stringify({ op: 3 }));
+          }
+        }, msg.d.heartbeat_interval);
+      } else if (msg.op === 0) { // Dispatch event
+        if (msg.t === 'INIT_STATE' || msg.t === 'PRESENCE_UPDATE') {
+          updateRealtimeUI(msg.d);
+        }
+      }
+    };
+
+    lanyardWs.onclose = () => {
+      setTimeout(connectLanyard, 5000); // Reconnect on close
+    };
+  }
+
+  function updateRealtimeUI(data) {
+    const user = data.discord_user;
+    
+    // 1. Avatar Update
+    const avatarExt = user.avatar && user.avatar.startsWith('a_') ? 'gif' : 'png';
+    const avatarUrl = user.avatar 
+        ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.${avatarExt}?size=512`
+        : 'assets/discord-avatar.jpg';
+    
+    document.getElementById('avatar').src = avatarUrl;
+    document.getElementById('discord-avatar').src = avatarUrl;
+
+    // 2. Avatar Decoration Update
+    const avatarDeco = document.getElementById('avatar-decoration');
+    if (user.avatar_decoration_data && user.avatar_decoration_data.asset) {
+        avatarDeco.src = `https://cdn.discordapp.com/avatar-decoration-presets/${user.avatar_decoration_data.asset}.png?size=96&passthrough=true`;
+        avatarDeco.style.display = 'block';
+    } else {
+        avatarDeco.style.display = 'none'; // hide if removed
+    }
+
+    // 3. Status Icon Update
+    const statusIcon = document.getElementById('discord-status-icon');
+    statusIcon.src = statusIconMap[data.discord_status] || statusIconMap.offline;
+
+    // 4. Username Update
+    document.getElementById('discord-username').textContent = user.display_name || user.username;
+
+    // 5. Activity Update
+    let activityText = CONFIG.discordStatus; // fallback
+    const customStatus = data.activities.find(a => a.type === 4);
+    if (customStatus) {
+        activityText = customStatus.state || customStatus.name || "No activity";
+    } else if (data.activities.length > 0) {
+        activityText = `Playing ${data.activities[0].name}`;
+    }
+    
+    document.getElementById('discord-activity').textContent = activityText;
+  }
+
+  connectLanyard();
 }

@@ -235,6 +235,7 @@ body {
 
 #name-row {
   display: flex;
+  align-items: center;
   gap: 6px;
   flex-wrap: wrap;
 }
@@ -252,7 +253,8 @@ body {
 /* Name span — SVG interference filter applied directly here */
 #name-text {
   display: inline-block;
-  width: 86px;
+  width: auto;
+  min-width: max-content;
   height: 32px;
   line-height: 32px;
   white-space: nowrap;
