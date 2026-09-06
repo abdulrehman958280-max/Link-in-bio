@@ -121,10 +121,10 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("discord-avatar").src           = CONFIG.discordAvatar;
 
   const statusIconMap = {
-    online:  "assets/icons/status/online.png",
-    idle:    "assets/icons/status/inactive.png",
-    dnd:     "assets/icons/status/busy.png",
-    offline: "assets/icons/status/offline.png",
+    online:  "/assets/icons/status/online.png",
+    idle:    "/assets/icons/status/inactive.png",
+    dnd:     "/assets/icons/status/busy.png",
+    offline: "/assets/icons/status/offline.png",
   };
   document.getElementById("discord-status-icon").src =
     statusIconMap[CONFIG.discordPresenceStatus] || statusIconMap.offline;
@@ -701,10 +701,10 @@ function initLanyard() {
   let lanyardWs = null;
   let heartbeatTimer = null;
   const statusIconMap = {
-    online:  "assets/icons/status/online.png",
-    idle:    "assets/icons/status/inactive.png",
-    dnd:     "assets/icons/status/busy.png",
-    offline: "assets/icons/status/offline.png",
+    online:  "/assets/icons/status/online.png",
+    idle:    "/assets/icons/status/inactive.png",
+    dnd:     "/assets/icons/status/busy.png",
+    offline: "/assets/icons/status/offline.png",
   };
 
   function connectLanyard() {

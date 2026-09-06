@@ -17,9 +17,9 @@ const CONFIG = {
   // ----------------------------------------------------------
   // FILES — place them in assets/ with these exact names
   // ----------------------------------------------------------
-  avatar:              "assets/avatar.jpg",
-  backgroundVideo:     "assets/background.mp4",
-  customCursor:        "assets/cursor.png",
+  avatar:              "/assets/avatar.jpg",
+  backgroundVideo:     "/assets/background.mp4",
+  customCursor:        "/assets/cursor.png",
   customCursorHotspot: "0 0",    // "0 0" = tip of the cursor (top-left corner)
 
   // ----------------------------------------------------------
@@ -34,10 +34,10 @@ const CONFIG = {
   // Add, remove or reorder. "icon" = path inside assets/badges/
   // ----------------------------------------------------------
   badges: [
-    { icon: "assets/badges/owner.png",    label: "Owner"    },
-    { icon: "assets/badges/verified.png", label: "Verified" },
-    { icon: "assets/badges/partner.png",  label: "Partner"  },
-    { icon: "assets/badges/hate.gif",     label: "hate"     },
+    { icon: "/assets/badges/owner.png",    label: "Owner"    },
+    { icon: "/assets/badges/verified.png", label: "Verified" },
+    { icon: "/assets/badges/partner.png",  label: "Partner"  },
+    { icon: "/assets/badges/hate.gif",     label: "hate"     },
   ],
   badgeSize:                "22px",
   badgeContainerBackground: "rgba(172, 200, 255, 0.08)",
@@ -59,7 +59,7 @@ const CONFIG = {
   // ----------------------------------------------------------
   discordUsername: "Jofagg_",
   discordStatus:   "Unavailable",
-  discordAvatar:   "assets/discord-avatar.jpg",
+  discordAvatar:   "/assets/discord-avatar.jpg",
   discordAvatarSize:   "74px",
   discordAvatarBorder: "2px solid rgba(200, 27, 27, 0.15)",
   // status: "online" | "idle" | "dnd" | "offline"
@@ -70,9 +70,9 @@ const CONFIG = {
   // Add, remove or reorder. "icon" = path inside assets/icons/
   // ----------------------------------------------------------
   socialLinks: [
-    { name: "Instagram", url: "https://www.instagram.com/_a.r.malik_/?utm_source=gr&r=nametag",         icon: "assets/icons/instagram.png" },
-    { name: "Discord",   url: "https://discord.gg/6zUVRf87", icon: "assets/icons/discord.png"   },
-    { name: "Github",  url: "https://github.com/abdulrehman958280-max", icon: "assets/icons/github.png"  },
+    { name: "Instagram", url: "https://www.instagram.com/_a.r.malik_/?utm_source=gr&r=nametag",         icon: "/assets/icons/instagram.png" },
+    { name: "Discord",   url: "https://discord.gg/6zUVRf87", icon: "/assets/icons/discord.png"   },
+    { name: "Github",  url: "https://github.com/abdulrehman958280-max", icon: "/assets/icons/github.png"  },
 
   ],
   iconSize:         "36px",
