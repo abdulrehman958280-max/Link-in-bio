@@ -5,6 +5,24 @@
 
 
 // ============================================================
+// HAPTIC FEEDBACK ENGINE
+// Lightweight tactile feedback exclusively on Start & End
+// (Zero haptics during beat loops to eliminate all UI/rendering lag)
+// ============================================================
+function triggerHaptic(type = "start") {
+  if (typeof navigator === "undefined" || !navigator.vibrate) return;
+
+  if (type === "start" || type === "entry") {
+    // Crisp tactile impulse on start/entry
+    navigator.vibrate([18, 30, 22]);
+  } else if (type === "end") {
+    // Clear tactile impulse when audio/video ends or is muted
+    navigator.vibrate(25);
+  }
+}
+
+
+// ============================================================
 // INIT — runs once the HTML is ready
 // ============================================================
 document.addEventListener("DOMContentLoaded", () => {
@@ -51,8 +69,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // -- Background video --
   const bgVideo = document.getElementById("bg-video");
-  document.getElementById("bg-video-source").src = CONFIG.backgroundVideo;
-  bgVideo.load();
+  if (CONFIG.backgroundVideo) {
+    bgVideo.src = CONFIG.backgroundVideo;
+    const sourceEl = document.getElementById("bg-video-source");
+    if (sourceEl) sourceEl.src = CONFIG.backgroundVideo;
+    bgVideo.load();
+    // Video will play when entry screen is clicked
+  }
 
   // -- Card appearance --
   document.documentElement.style.setProperty("--card-max-width",        CONFIG.cardMaxWidth);
@@ -89,19 +112,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     a.appendChild(icon);
     
-    // Add haptic feedback on click
-    a.addEventListener("mousedown", () => {
-      if (navigator.vibrate) navigator.vibrate(10);
-    });
-
     socialContainer.appendChild(a);
   });
 
-  // Haptic feedback for the profile card
   const profileCard = document.getElementById("profile-card");
-  profileCard.addEventListener("mousedown", () => {
-    if (navigator.vibrate) navigator.vibrate(10);
-  });
   document.getElementById("discord-username").textContent = CONFIG.discordUsername;
   document.getElementById("discord-activity").textContent = CONFIG.discordStatus;
   document.getElementById("discord-avatar").src           = CONFIG.discordAvatar;
@@ -137,14 +151,23 @@ document.addEventListener("DOMContentLoaded", () => {
   // --------------------------------------------------------
 
   document.getElementById("entry-screen").addEventListener("click", (e) => {
-    if (navigator.vibrate) navigator.vibrate(20); // Small haptic on entry
+    triggerHaptic("entry"); // Confident tactile pattern on entry unlock
     
     e.currentTarget.classList.add("hidden");
 
     bgVideo.muted = false;
-    bgVideo.play();
+    const playPromise = bgVideo.play();
+    if (playPromise !== undefined) {
+      playPromise.catch((err) => {
+        console.warn("Unmuted video autoplay prevented, falling back to muted:", err);
+        bgVideo.muted = true;
+        bgVideo.play().catch(() => {});
+        const volumeBtn = document.getElementById("volume-btn");
+        if (volumeBtn) volumeBtn.textContent = "🔇";
+      });
+    }
     
-    // -- ENHANCED AUDIO BEAT DETECTION --
+    // -- UPGRADED DUAL-BAND ADAPTIVE BEAT DETECTION ENGINE --
     try {
       const AudioContext = window.AudioContext || window.webkitAudioContext;
       if (AudioContext && !window.audioCtx) {
@@ -154,9 +177,9 @@ document.addEventListener("DOMContentLoaded", () => {
         const gainNode = window.audioCtx.createGain();
         
         window.audioGainNode = gainNode;
-        // 256 gives better frequency grouping for kicks/bass without being too slow
-        analyser.fftSize = 256; 
-        analyser.smoothingTimeConstant = 0.7; // Faster response to drops
+        // 512 gives 256 frequency bins for precise kick and snare isolation
+        analyser.fftSize = 512; 
+        analyser.smoothingTimeConstant = 0.42; // Fast, instantaneous transient attack
         
         source.connect(analyser);
         analyser.connect(gainNode);
@@ -165,45 +188,121 @@ document.addEventListener("DOMContentLoaded", () => {
         const dataArray = new Uint8Array(analyser.frequencyBinCount);
         
         let lastBeatTime = 0;
-        let minTimeBetweenBeats = 280; // slightly strict to avoid double triggers
-        let energyHistory = [];
+        const minTimeBetweenBeats = 110; // allows rapid 16th notes / fast tempos without dropping beats
+        const lowHistory = [];
+        const midHistory = [];
+        let prevLow = 0;
+        let prevMid = 0;
+        let lowEnv = 0;
+        let midEnv = 0;
+        let beatAnimTimer = null;
+        
+        const avatarWrapper = document.getElementById("avatar-wrapper");
+        const badgesEl = document.getElementById("badges");
+        const discordBox = document.getElementById("discord-presence");
+        const socialLinksEl = document.getElementById("social-links");
+        const volumeBtnEl = document.getElementById("volume-btn");
         
         function detectBeat() {
           requestAnimationFrame(detectBeat);
-          if (bgVideo.paused || bgVideo.muted) return;
+          if (bgVideo.paused || bgVideo.muted) {
+            if (volumeBtnEl) volumeBtnEl.classList.remove("audio-active");
+            return;
+          }
           
+          if (volumeBtnEl) volumeBtnEl.classList.add("audio-active");
           analyser.getByteFrequencyData(dataArray);
           
-          // Focus strictly on Kick/Bass bins (bins 1 to 5 cover ~80Hz to 400Hz)
-          let currentEnergy = 0;
-          for(let i = 1; i <= 5; i++) {
-             currentEnergy += dataArray[i];
+          // Band 1: Sub-bass & Kicks (bins 1 to 6, ~40Hz - 260Hz)
+          let lowEnergy = 0;
+          for (let i = 1; i <= 6; i++) {
+            lowEnergy += dataArray[i];
           }
-          currentEnergy /= 5;
-
-          energyHistory.push(currentEnergy);
-          if (energyHistory.length > 25) energyHistory.shift();
-
-          // Calculate moving average
-          let avgEnergy = energyHistory.reduce((a, b) => a + b, 0) / energyHistory.length;
+          lowEnergy /= 6;
           
-          // Dynamic threshold: Must be 25% higher than average, and at least 150 volume
-          let isBeat = currentEnergy > (avgEnergy * 1.25) && currentEnergy > 150;
-
+          // Band 2: Snares, Claps, Percussion, Vocals (bins 7 to 25, ~300Hz - 1100Hz)
+          let midEnergy = 0;
+          for (let i = 7; i <= 25; i++) {
+            midEnergy += dataArray[i];
+          }
+          midEnergy /= 19;
+          
+          // Flux: frame-to-frame sudden onset jumps
+          const lowFlux = Math.max(0, lowEnergy - prevLow);
+          const midFlux = Math.max(0, midEnergy - prevMid);
+          prevLow = lowEnergy;
+          prevMid = midEnergy;
+          
+          // Envelope decay
+          lowEnv = Math.max(lowEnergy, lowEnv * 0.88);
+          midEnv = Math.max(midEnergy, midEnv * 0.88);
+          
+          // Rolling baseline stats (lightweight iteration, zero GC allocations)
+          lowHistory.push(lowEnergy);
+          if (lowHistory.length > 24) lowHistory.shift();
+          let sumLow = 0;
+          for (let i = 0; i < lowHistory.length; i++) sumLow += lowHistory[i];
+          const avgLow = sumLow / lowHistory.length;
+          
+          midHistory.push(midEnergy);
+          if (midHistory.length > 24) midHistory.shift();
+          let sumMid = 0;
+          for (let i = 0; i < midHistory.length; i++) sumMid += midHistory[i];
+          const avgMid = sumMid / midHistory.length;
+          
+          // Adaptive Onset Conditions:
+          // 1. Kick/bass beat hit
+          const isKickBeat = lowEnergy > Math.max(28, avgLow * 1.12) && (lowFlux > 2.5 || lowEnergy >= lowEnv * 0.96);
+          // 2. Snare/clap/rhythm beat hit
+          const isMidBeat = midEnergy > Math.max(30, avgMid * 1.15) && (midFlux > 3.0 || midEnergy >= midEnv * 0.96);
+          // 3. Combined general transient punch
+          const combined = lowEnergy * 0.65 + midEnergy * 0.35;
+          const avgCombined = avgLow * 0.65 + avgMid * 0.35;
+          const isCombinedBeat = combined > Math.max(28, avgCombined * 1.14);
+          
+          const isBeat = isKickBeat || isMidBeat || isCombinedBeat;
+          
           const now = performance.now();
           if (isBeat && (now - lastBeatTime) > minTimeBetweenBeats) {
             lastBeatTime = now;
             
-            if (navigator.vibrate) navigator.vibrate(25); // Haptic feedback
+            // Normalized intensity based on drop energy
+            const kickExcess = Math.max(0, lowEnergy - avgLow);
+            const midExcess = Math.max(0, midEnergy - avgMid);
+            const intensity = Math.min(1.0, Math.max(0.2, (kickExcess * 1.2 + midExcess * 0.8) / 45));
             
-            // Force CSS reflow to restart animation on every hit perfectly
-            profileCard.classList.remove("beat-hit");
-            void profileCard.offsetWidth; 
+            // Note: Haptics removed during beats to eliminate mobile lag/stutter
+            
+            // Pulse profile card with proportional scale
+            profileCard.style.setProperty("--beat-pulse", (0.016 + intensity * 0.026).toFixed(3));
+            
+            // Clear any pending timeout from previous beat
+            if (beatAnimTimer) {
+              clearTimeout(beatAnimTimer);
+              beatAnimTimer = null;
+            }
+            
+            // Apply beat hit animation smoothly (no synchronous layout reflows)
             profileCard.classList.add("beat-hit");
+            if (avatarWrapper) avatarWrapper.classList.add("beat-hit");
+            if (badgesEl) badgesEl.classList.add("beat-hit");
+            if (discordBox) discordBox.classList.add("beat-hit");
+            if (socialLinksEl) socialLinksEl.classList.add("beat-hit");
             
-            setTimeout(() => {
+            // Background particles shockwave explosion
+            if (window.onBeatParticleShockwave) {
+              window.onBeatParticleShockwave(intensity);
+            }
+            
+            // Smoothly remove beat-hit after snappy punch
+            beatAnimTimer = setTimeout(() => {
               profileCard.classList.remove("beat-hit");
-            }, 150); 
+              if (avatarWrapper) avatarWrapper.classList.remove("beat-hit");
+              if (badgesEl) badgesEl.classList.remove("beat-hit");
+              if (discordBox) discordBox.classList.remove("beat-hit");
+              if (socialLinksEl) socialLinksEl.classList.remove("beat-hit");
+              beatAnimTimer = null;
+            }, 85);
           }
         }
         
@@ -226,7 +325,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }, { once: true });
 
   // --------------------------------------------------------
-  // 3D card tilt on mouse move
+  // 3D card tilt on mouse move (gentle on touch to prevent misclicks)
   // --------------------------------------------------------
   if (CONFIG.cardTiltIntensity > 0) {
     const tiltTransform = (x, y) =>
@@ -236,37 +335,46 @@ document.addEventListener("DOMContentLoaded", () => {
       profileCard.style.transform = tiltTransform(0, 0);
     };
 
-    const applyTilt = (clientX, clientY) => {
+    const applyTilt = (clientX, clientY, factor = 1) => {
       const rect    = profileCard.getBoundingClientRect();
       const offsetX = (clientX - rect.left)  / rect.width  - 0.5;
       const offsetY = (clientY - rect.top)   / rect.height - 0.5;
       profileCard.style.transform = tiltTransform(
-        -offsetY * 2 * CONFIG.cardTiltIntensity,
-         offsetX * 2 * CONFIG.cardTiltIntensity
+        -offsetY * 2 * CONFIG.cardTiltIntensity * factor,
+         offsetX * 2 * CONFIG.cardTiltIntensity * factor
       );
     };
 
     // Mouse
-    profileCard.addEventListener("mousemove",  (e) => applyTilt(e.clientX, e.clientY));
+    profileCard.addEventListener("mousemove",  (e) => applyTilt(e.clientX, e.clientY, 1));
     profileCard.addEventListener("mouseleave", resetTransform);
 
-    // Touch (mobile)
-    profileCard.addEventListener("touchmove", (e) => applyTilt(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
+    // Touch (gentle tilt so user doesn't miss links)
+    profileCard.addEventListener("touchmove", (e) => {
+      if (e.touches && e.touches[0]) {
+        applyTilt(e.touches[0].clientX, e.touches[0].clientY, 0.35);
+      }
+    }, { passive: true });
     profileCard.addEventListener("touchend",  resetTransform);
   }
 
   // --------------------------------------------------------
-  // Volume button
+  // Volume button & Playback status (Start / End haptics)
   // --------------------------------------------------------
   const volumeBtn = document.getElementById("volume-btn");
   volumeBtn.addEventListener("click", () => {
     bgVideo.muted = !bgVideo.muted;
     volumeBtn.textContent = bgVideo.muted ? "🔇" : "🔊";
+    triggerHaptic(bgVideo.muted ? "end" : "start");
     
     // Also mute the audio context gain node to prevent double audio playback on some devices
     if (window.audioGainNode) {
       window.audioGainNode.gain.value = bgVideo.muted ? 0 : 1;
     }
+  });
+
+  bgVideo.addEventListener("ended", () => {
+    triggerHaptic("end");
   });
 
 });
@@ -309,24 +417,25 @@ function initNameEffect() {
 // Types the title in the browser tab, pauses, deletes, repeats.
 // ============================================================
 function initTabTitle(text) {
+  const chars   = Array.from(text);
   let index     = 0;
   let isTyping  = true;
 
   function tick() {
     if (isTyping) {
-      document.title = text.substring(0, index + 1);
+      document.title = chars.slice(0, index + 1).join("");
       index++;
-      if (index === text.length) {
+      if (index === chars.length) {
         isTyping = false;
         setTimeout(tick, 1500);
         return;
       }
     } else {
-      document.title = text.substring(0, index - 1);
+      document.title = chars.slice(0, Math.max(0, index - 1)).join("");
       index--;
-      if (index === 0) isTyping = true;
+      if (index <= 0) isTyping = true;
     }
-    setTimeout(tick, 100);
+    setTimeout(tick, 110);
   }
 
   tick();
@@ -337,28 +446,29 @@ function initTabTitle(text) {
 // STATUS TYPEWRITER
 // ============================================================
 function initTypewriter(el, text, speed = 80) {
+  const chars    = Array.from(text);
   let i          = 0;
   let isDeleting = false;
 
   function tick() {
     if (!isDeleting) {
-      el.textContent = text.substring(0, i);
+      el.textContent = chars.slice(0, i).join("");
       i++;
-      if (i > text.length) {
-        setTimeout(() => { isDeleting = true; tick(); }, 1800);
+      if (i > chars.length) {
+        setTimeout(() => { isDeleting = true; tick(); }, 2000);
         return;
       }
     } else {
-      el.textContent = text.substring(0, i);
+      el.textContent = chars.slice(0, i).join("");
       i--;
       if (i < 0) {
         i = 0;
         isDeleting = false;
-        setTimeout(tick, 500);
+        setTimeout(tick, 600);
         return;
       }
     }
-    setTimeout(tick, isDeleting ? speed * 0.5 : speed);
+    setTimeout(tick, isDeleting ? speed * 0.45 : speed);
   }
 
   tick();
@@ -381,8 +491,19 @@ function initParticles() {
 
   let particles = [];
   let mouseX    = window.innerWidth / 2;
+  let beatPulseEnergy = 0;
+
+  // Global trigger called by audio analyser on beat drops
+  window.onBeatParticleShockwave = (intensity) => {
+    beatPulseEnergy = Math.max(beatPulseEnergy, intensity || 0.85);
+  };
 
   document.addEventListener("mousemove", (e) => { mouseX = e.clientX; });
+  document.addEventListener("touchmove", (e) => {
+    if (e.touches && e.touches[0]) {
+      mouseX = e.touches[0].clientX;
+    }
+  }, { passive: true });
 
   function resize() {
     canvas.width  = window.innerWidth;
@@ -408,22 +529,43 @@ function initParticles() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = particleColor;
 
+    // Smoothly decay the beat impulse
+    beatPulseEnergy = Math.max(0, beatPulseEnergy * 0.915 - 0.008);
+
     const parallaxOffset = -(mouseX - canvas.width / 2) * particleParallaxStrength;
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
+    const nowTime = performance.now() * 0.001;
 
     particles.forEach((p) => {
-      p.y += p.fallSpeed;
-      if (p.y > canvas.height + 10) {
-        p.y     = -10;
+      // Dynamic fall speed increases smoothly during heavy drops
+      p.y += p.fallSpeed * (1 + beatPulseEnergy * 0.85);
+      if (p.y > canvas.height + 15) {
+        p.y     = -15;
         p.baseX = Math.random() * canvas.width;
       }
 
-      const sway = Math.sin(performance.now() * 0.001 * p.swaySpeed + p.swayPhase) * particleSwayAmount;
+      const sway = Math.sin(nowTime * p.swaySpeed + p.swayPhase) * (particleSwayAmount * (1 + beatPulseEnergy * 0.3));
       let x = p.baseX + sway + parallaxOffset;
       x = ((x % canvas.width) + canvas.width) % canvas.width;
 
-      ctx.globalAlpha = p.opacity;
+      // Radial shockwave outward from center profile card on beat drops
+      let renderX = x;
+      let renderY = p.y;
+      if (beatPulseEnergy > 0.01) {
+        const dx = x - cx;
+        const dy = p.y - cy;
+        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+        const distFactor = Math.max(0, 1 - dist / (canvas.width * 0.65));
+        const impulse = beatPulseEnergy * 24 * distFactor;
+        renderX += (dx / dist) * impulse;
+        renderY += (dy / dist) * impulse;
+      }
+
+      const renderR = p.r * (1 + beatPulseEnergy * 0.75);
+      ctx.globalAlpha = Math.min(1, p.opacity * (1 + beatPulseEnergy * 0.85));
       ctx.beginPath();
-      ctx.arc(x, p.y, p.r, 0, Math.PI * 2);
+      ctx.arc(renderX, renderY, renderR, 0, Math.PI * 2);
       ctx.fill();
     });
 
@@ -460,6 +602,20 @@ function initCursorTrail() {
     mouseX = e.clientX;
     mouseY = e.clientY;
   });
+
+  document.addEventListener("touchmove", (e) => {
+    if (e.touches && e.touches[0]) {
+      mouseX = e.touches[0].clientX;
+      mouseY = e.touches[0].clientY;
+    }
+  }, { passive: true });
+
+  document.addEventListener("touchstart", (e) => {
+    if (e.touches && e.touches[0]) {
+      mouseX = e.touches[0].clientX;
+      mouseY = e.touches[0].clientY;
+    }
+  }, { passive: true });
 
   function resize() {
     canvas.width  = window.innerWidth;
@@ -543,6 +699,7 @@ function initLanyard() {
   }
 
   let lanyardWs = null;
+  let heartbeatTimer = null;
   const statusIconMap = {
     online:  "assets/icons/status/online.png",
     idle:    "assets/icons/status/inactive.png",
@@ -551,6 +708,10 @@ function initLanyard() {
   };
 
   function connectLanyard() {
+    if (heartbeatTimer) {
+      clearInterval(heartbeatTimer);
+      heartbeatTimer = null;
+    }
     lanyardWs = new WebSocket('wss://api.lanyard.rest/socket');
 
     lanyardWs.onmessage = (event) => {
@@ -562,9 +723,10 @@ function initLanyard() {
           d: { subscribe_to_id: CONFIG.discordId }
         }));
         
-        // Start heartbeat
-        setInterval(() => {
-          if (lanyardWs.readyState === WebSocket.OPEN) {
+        // Start heartbeat safely
+        if (heartbeatTimer) clearInterval(heartbeatTimer);
+        heartbeatTimer = setInterval(() => {
+          if (lanyardWs && lanyardWs.readyState === WebSocket.OPEN) {
             lanyardWs.send(JSON.stringify({ op: 3 }));
           }
         }, msg.d.heartbeat_interval);
@@ -576,6 +738,10 @@ function initLanyard() {
     };
 
     lanyardWs.onclose = () => {
+      if (heartbeatTimer) {
+        clearInterval(heartbeatTimer);
+        heartbeatTimer = null;
+      }
       setTimeout(connectLanyard, 5000); // Reconnect on close
     };
   }
@@ -609,13 +775,8 @@ function initLanyard() {
     document.getElementById('discord-username').textContent = user.display_name || user.username;
 
     // 5. Activity Update
-    let activityText = CONFIG.discordStatus; // fallback
-    const customStatus = data.activities.find(a => a.type === 4);
-    if (customStatus) {
-        activityText = customStatus.state || customStatus.name || "No activity";
-    } else if (data.activities.length > 0) {
-        activityText = `Playing ${data.activities[0].name}`;
-    }
+    let activityText = CONFIG.discordStatus; // Forced as per request
+    // Removed real-time custom status override to ensure it says "Unavailable"
     
     document.getElementById('discord-activity').textContent = activityText;
   }

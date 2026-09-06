@@ -1,0 +1,6 @@
+{
+  "name": "Profile Link in Bio",
+  "description": "Interactive aesthetic profile card with liquid glass effect, beat-synced visualizer, Discord status, and social links.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

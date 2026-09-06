@@ -1,6 +1,7 @@
 /* ============================================================
    style.css — visual styles
    Colors, sizes and effects are controlled via config.js
+   Pure Liquid Glass Design System
    ============================================================ */
 
 
@@ -8,7 +9,6 @@
    CUSTOM FONT
    Place your font file at assets/fonts/fuente.otf
    If the file doesn't exist, the page falls back to sans-serif.
-   See assets/fonts/README.md for .ttf / .woff2 instructions.
    ============================================================ */
 @font-face {
   font-family: "CustomFont";
@@ -18,19 +18,22 @@
 
 
 /* ============================================================
-   RESET
+   RESET & BASE SETUP
    ============================================================ */
-* {
+*, *::before, *::after {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-body {
-  font-family: "CustomFont", sans-serif;
-  background-color: #080808;
+html, body {
+  width: 100%;
+  height: 100%;
   overflow: hidden;
-  height: 100vh;
+  background-color: #050508;
+  font-family: "CustomFont", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 
@@ -41,28 +44,28 @@ body {
   transition: transform 0.2s cubic-bezier(0.2, 0.72, 0.12, 1), scale 0.15s ease-out;
 }
 .click-scale:active {
-  scale: 0.96;
+  scale: 0.97;
 }
+
 
 /* ============================================================
    ENTRY SCREEN
-   Blurred overlay shown before the user clicks to enter.
-   JS adds the .hidden class on click to fade it out.
+   Blurred overlay shown before user enters.
    ============================================================ */
 #entry-screen {
   position: fixed;
   inset: 0;
-  z-index: 10;
+  z-index: 50;
 
   display: flex;
   align-items: center;
   justify-content: center;
 
-  background: rgba(8, 8, 8, 0.55);
-  backdrop-filter: blur(15px);
-  -webkit-backdrop-filter: blur(15px);
+  background: #000;
 
   cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
   transition: opacity 0.8s ease, visibility 0.8s ease;
 }
 
@@ -72,16 +75,37 @@ body {
   pointer-events: none;
 }
 
-#entry-symbol {
-  font-size: 50px;
-  color: #ffffff;
-  text-shadow: 0 0 15px #acc8ff, 0 0 30px #0011ff;
-  animation: pulse 2s infinite ease-in-out;
+#entry-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
 }
 
-@keyframes pulse {
-  0%, 100% { opacity: 0.6; transform: scale(1);    }
-  50%       { opacity: 1;   transform: scale(1.15); }
+#entry-symbol {
+  font-size: 52px;
+  color: #ffffff;
+  text-shadow: 0 0 18px #acc8ff, 0 0 35px #0033ff, 0 0 50px rgba(172, 200, 255, 0.5);
+  animation: pulseSymbol 2.2s infinite ease-in-out;
+}
+
+#entry-hint {
+  font-size: 11.5px;
+  letter-spacing: 3.5px;
+  text-transform: uppercase;
+  color: rgba(172, 200, 255, 0.65);
+  animation: pulseHint 2.2s infinite ease-in-out;
+}
+
+@keyframes pulseSymbol {
+  0%, 100% { opacity: 0.65; transform: scale(1);    }
+  50%       { opacity: 1;    transform: scale(1.16); }
+}
+
+@keyframes pulseHint {
+  0%, 100% { opacity: 0.35; transform: translateY(0);    }
+  50%       { opacity: 0.85; transform: translateY(-2px); }
 }
 
 
@@ -91,7 +115,9 @@ body {
 #main-content {
   width: 100%;
   height: 100vh;
+  height: 100dvh;
   position: relative;
+  overflow: hidden;
 }
 
 /* Full-screen video behind everything */
@@ -101,18 +127,20 @@ body {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  z-index: -1;
+  z-index: 1;
+  opacity: 1;
+  pointer-events: none;
 }
 
 /* Particle canvas — sits above the video, behind the card */
 #bg-canvas {
   position: fixed;
   inset: 0;
-  z-index: -1;
+  z-index: 2;
   pointer-events: none;
 }
 
-/* Cursor trail canvas — sits above everything, never blocks clicks */
+/* Cursor trail canvas — sits above everything */
 #cursor-canvas {
   position: fixed;
   inset: 0;
@@ -122,107 +150,216 @@ body {
 
 
 /* ============================================================
-   VOLUME BUTTON
+   VOLUME BUTTON (Pure Liquid Glass Style)
    ============================================================ */
 #volume-btn {
   position: fixed;
-  top: 16px;
-  left: 16px;
-  z-index: 5;
+  top: max(16px, env(safe-area-inset-top));
+  left: max(16px, env(safe-area-inset-left));
+  z-index: 10;
 
-  width: 38px;
-  height: 38px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
-  border: 1px solid rgba(172, 200, 255, 0.15);
-  background: rgba(172, 200, 255, 0.08);
+  cursor: pointer;
 
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 16px;
   color: #acc8ff;
-  transition: background 0.2s ease;
+
+  /* Liquid Glass */
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0.02) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-top: 1.2px solid rgba(255, 255, 255, 0.42);
+  box-shadow: 
+    0 6px 18px rgba(0, 0, 0, 0.35), 
+    inset 0 1px 1px rgba(255, 255, 255, 0.35);
+  
+  transition: transform 0.2s cubic-bezier(0.2, 0.72, 0.12, 1), background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 #volume-btn:hover {
-  background: rgba(172, 200, 255, 0.18);
+  transform: scale(1.08);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.05) 100%);
+  border-color: rgba(255, 255, 255, 0.45);
+  box-shadow: 
+    0 8px 25px rgba(0, 0, 0, 0.45), 
+    0 0 15px rgba(172, 200, 255, 0.2),
+    inset 0 1px 1px rgba(255, 255, 255, 0.5);
+}
+
+#volume-btn:active {
+  transform: scale(0.94);
 }
 
 
 /* ============================================================
-   PROFILE CARD
-   The card shape (background, corners) is always visible.
-   Only its children animate in after the entry click.
+   PROFILE CARD (Pure Liquid Style)
+   High clarity, no blur, sharp specular highlights, refractive depth
    ============================================================ */
 #profile-card {
   position: absolute;
   top: 50%;
   left: 50%;
+  z-index: 5;
 
   display: flex;
   flex-direction: column;
-  gap: 30px;
-  letter-spacing: 1.5px;
+  align-items: center;
+  gap: 24px;
+  letter-spacing: 1.2px;
 
-  width: min(92%, var(--card-max-width, 380px));
-  padding: 26px;
+  width: min(92%, var(--card-max-width, 420px));
+  padding: 30px 26px;
 
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
-  backdrop-filter: blur(25px) saturate(120%);
-  -webkit-backdrop-filter: blur(25px) saturate(120%);
+  /* Pure Liquid Aesthetic: clear optical transmission, high refraction highlights */
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.015) 45%, rgba(0, 0, 0, 0.16) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-top: 1.5px solid rgba(255, 255, 255, 0.46);
+  border-left: 1.2px solid rgba(255, 255, 255, 0.3);
+  border-right: 1px solid rgba(255, 255, 255, 0.16);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--card-border-radius, 60px);
 
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3), inset 0 0 15px rgba(255, 255, 255, 0.05);
-  border-radius: var(--card-border-radius, 85px);
+  /* Deep multi-tiered liquid droplet shadows + inner refraction gloss */
+  box-shadow: 
+    0 25px 60px -12px rgba(0, 0, 0, 0.75),
+    0 0 35px -5px rgba(255, 255, 255, 0.03),
+    inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -2px 4px 0 rgba(0, 0, 0, 0.35),
+    inset 0 0 30px 0 rgba(255, 255, 255, 0.03);
 
   transform: translate(-50%, -50%) perspective(var(--card-tilt-perspective, 1000px)) rotateX(0deg) rotateY(0deg);
-  transition: transform 700ms cubic-bezier(0.03, 0.98, 0.52, 0.99), scale 0.15s ease-out, box-shadow 0.15s ease-out;
+  transition: transform 700ms cubic-bezier(0.03, 0.98, 0.52, 0.99), scale 0.15s ease-out, box-shadow 0.15s ease-out, border-color 0.15s ease-out;
   will-change: transform, scale;
+  user-select: none;
 }
 
 #profile-card:active {
-  scale: 0.98;
+  scale: 0.985;
 }
 
-/* Highly optimized beat animation applied by JS (No backdrop-filter or drop-shadow animations) */
+/* ============================================================
+   UPGRADED BEAT-SYNCED ANIMATIONS (Fluid Liquid Pulse & Glow)
+   ============================================================ */
 #profile-card.beat-hit {
-  scale: 1.02;
-  box-shadow: 0 12px 40px 0 rgba(255, 255, 255, 0.15), inset 0 0 25px rgba(255, 255, 255, 0.1);
-  transition: scale 0.05s ease-out, box-shadow 0.05s ease-out;
+  scale: calc(1 + var(--beat-pulse, 0.028));
+  border-color: rgba(255, 255, 255, 0.52);
+  border-top-color: rgba(255, 255, 255, 0.75);
+  box-shadow: 
+    0 40px 85px -10px rgba(0, 0, 0, 0.9),
+    0 0 50px rgba(172, 200, 255, 0.32),
+    0 0 80px rgba(172, 200, 255, 0.12),
+    inset 0 2.5px 3px rgba(255, 255, 255, 0.85),
+    inset 0 0 45px rgba(172, 200, 255, 0.18);
+  transition: scale 0.05s cubic-bezier(0.12, 0.92, 0.25, 1), box-shadow 0.05s ease-out, border-color 0.05s ease-out;
 }
 
-/* Card reveal — sections animate in one by one after entry click */
+/* Avatar Beat Thump */
+#avatar-wrapper {
+  will-change: transform;
+  transition: transform 0.09s cubic-bezier(0.12, 0.92, 0.25, 1);
+}
+#avatar-wrapper.beat-hit {
+  transform: scale(1.055);
+}
+#avatar-wrapper.beat-hit #avatar {
+  border-color: rgba(255, 255, 255, 0.65);
+  box-shadow: 0 6px 22px rgba(172, 200, 255, 0.35);
+}
+#avatar-wrapper.beat-hit #avatar-decoration {
+  filter: brightness(1.25) drop-shadow(0 0 8px rgba(172, 200, 255, 0.5));
+}
+
+/* Badges Beat Bounce */
+#badges {
+  will-change: transform;
+  transition: transform 0.09s cubic-bezier(0.12, 0.92, 0.25, 1), border-color 0.09s ease-out;
+}
+#badges.beat-hit {
+  transform: scale(1.045);
+  border-color: rgba(255, 255, 255, 0.45);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4), 0 0 12px rgba(172, 200, 255, 0.25), inset 0 1.5px 1.5px rgba(255, 255, 255, 0.45);
+}
+
+/* Discord Presence Capsule Beat Pulse */
+#discord-presence {
+  will-change: transform;
+  transition: transform 0.1s cubic-bezier(0.12, 0.92, 0.25, 1), box-shadow 0.1s ease-out, border-color 0.1s ease-out;
+}
+#discord-presence.beat-hit {
+  transform: scale(1.025);
+  border-color: rgba(255, 255, 255, 0.42);
+  box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.5), 0 0 18px rgba(172, 200, 255, 0.25), inset 0 1.5px 1.5px rgba(255, 255, 255, 0.45);
+  transition: transform 0.05s cubic-bezier(0.12, 0.92, 0.25, 1), box-shadow 0.05s ease-out, border-color 0.05s ease-out;
+}
+
+/* Social links container beat pulse */
+#social-links {
+  will-change: transform;
+  transition: transform 0.1s cubic-bezier(0.12, 0.92, 0.25, 1);
+}
+#social-links.beat-hit {
+  transform: scale(1.025);
+  transition: transform 0.05s cubic-bezier(0.12, 0.92, 0.25, 1);
+}
+
+/* Social icons subtle rhythmic bounce */
+#social-links a.beat-hit {
+  transform: translateY(-2px) scale(1.04);
+  border-color: rgba(255, 255, 255, 0.38);
+  transition: transform 0.05s cubic-bezier(0.12, 0.92, 0.25, 1);
+}
+
+/* Volume button active audio pulse */
+#volume-btn.audio-active {
+  box-shadow: 
+    0 6px 18px rgba(0, 0, 0, 0.35), 
+    0 0 12px rgba(172, 200, 255, 0.25),
+    inset 0 1px 1px rgba(255, 255, 255, 0.35);
+}
+
+/* Card reveal cascade */
 @keyframes unfold {
-  from { opacity: 0; transform: translateY(-26px); }
+  from { opacity: 0; transform: translateY(-20px); }
   to   { opacity: 1; transform: translateY(0);     }
 }
 
-#profile-card > * { opacity: 0; }
+#profile-card > * { 
+  opacity: 0; 
+  width: 100%;
+}
 
 #profile-card.revealed > * {
   animation: unfold 0.7s cubic-bezier(0.2, 0.72, 0.12, 1) both;
 }
 
-#profile-card.revealed > *:nth-child(1) { animation-delay: 0ms;    }
-#profile-card.revealed > *:nth-child(2) { animation-delay: 700ms;  }
-#profile-card.revealed > *:nth-child(3) { animation-delay: 1400ms; }
+#profile-card.revealed > *:nth-child(1) { animation-delay: 0ms;   }
+#profile-card.revealed > *:nth-child(2) { animation-delay: 450ms; }
+#profile-card.revealed > *:nth-child(3) { animation-delay: 900ms; }
 
 
 /* ============================================================
-   PROFILE MAIN — avatar + name + status
+   PROFILE MAIN — Avatar, Name, Badges, Status
    ============================================================ */
 #profile-main {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 16px;
+  text-align: center;
+  gap: 14px;
+  width: 100%;
 }
 
-/* Avatar */
+/* Avatar Wrapper */
 #avatar-wrapper {
   position: relative;
-  width: var(--avatar-size, 70px);
-  height: var(--avatar-size, 70px);
+  width: var(--avatar-size, 76px);
+  height: var(--avatar-size, 76px);
   flex-shrink: 0;
+  margin: 0 auto;
 }
 
 #avatar {
@@ -230,10 +367,12 @@ body {
   height: 100%;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid rgba(249, 184, 184, 0.3);
+  border: 2px solid rgba(249, 184, 184, 0.35);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+  display: block;
 }
 
-/* Discord-style animated decoration ring — larger than the avatar */
+/* Discord-style animated decoration ring */
 #avatar-decoration {
   position: absolute;
   inset: -15%;
@@ -243,67 +382,71 @@ body {
   pointer-events: none;
 }
 
-/* Name row — name span + badges side by side */
-#profile-name {
+/* Profile Info Container */
+#profile-info {
+  width: 100%;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 8px;
-  color: #acc8ff;
-  font-size: 22px;
-  font-weight: 600;
-  text-shadow: var(--username-glow, none);
-  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* Name Row Container: strictly centered stack to prevent ANY sideways shift */
+#profile-name {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 #name-row {
+  width: 100%;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
 }
 
-/* Name wrapper — auto-sized so it doesn't interfere with badges */
+/* Name wrapper */
 .name-wrapper {
   position: relative;
-  width: auto;
-  height: auto;
+  width: 100%;
   display: flex;
-  justify-content: flex-start;
+  align-items: center;
+  justify-content: center;
   overflow: visible;
 }
 
-/* Name span — SVG interference filter applied directly here */
+/* Name span — SVG interference filter applied */
 #name-text {
-  display: inline-block;
+  display: block;
   width: auto;
-  min-width: max-content;
-  height: 32px;
-  line-height: 32px;
+  text-align: center;
+  color: #acc8ff;
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.25;
   white-space: nowrap;
   overflow: visible;
-  color: #acc8ff;
-  font-size: 30px;
-  font-weight: 600;
-  text-shadow: var(--username-glow, none);
+  text-shadow: var(--username-glow, 0 0 10px rgba(172, 200, 255, 0.4));
   filter: url(#name-filter);
 }
 
-/* Name tooltip — appears above on hover */
+/* Name Tooltip */
 .name-tooltip {
   position: absolute;
-  bottom: calc(100% + 6px);
+  bottom: calc(100% + 8px);
   left: 50%;
   transform: translateX(-50%) translateY(4px);
-  background: rgba(10, 10, 15, 0.82);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  border: 1px solid rgba(172, 200, 255, 0.12);
+  background: rgba(10, 10, 15, 0.9);
+  border: 1px solid rgba(172, 200, 255, 0.2);
   border-radius: 6px;
   padding: 4px 8px;
   white-space: nowrap;
   font-size: 11px;
   font-weight: 500;
-  letter-spacing: 0.5px;
   color: #acc8ff;
   pointer-events: none;
   opacity: 0;
@@ -311,21 +454,28 @@ body {
   z-index: 99;
 }
 
-.name-wrapper:hover .name-tooltip {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
+@media (hover: hover) {
+  .name-wrapper:hover .name-tooltip {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
 }
 
-/* Badges */
+/* Badges Liquid Glass Pill */
 #badges {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 5.5px;
-  padding: 6px 10px;
-  border-radius: 25px;
-  background: var(--badge-container-bg, rgba(172, 200, 255, 0.08));
-  border: var(--badge-container-border, 2px solid rgba(172, 200, 255, 0.04));
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 30px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-top: 1.2px solid rgba(255, 255, 255, 0.36);
+  box-shadow: 
+    0 4px 14px rgba(0, 0, 0, 0.3),
+    inset 0 1px 1px rgba(255, 255, 255, 0.25);
+  margin: 0 auto;
 }
 
 .badge-item {
@@ -335,31 +485,30 @@ body {
 }
 
 .badge-item img {
-  width: var(--badge-size, 22px);
-  height: var(--badge-size, 22px);
+  width: var(--badge-size, 20px);
+  height: var(--badge-size, 20px);
   object-fit: contain;
   display: block;
   transition: transform 0.15s ease;
 }
 
-.badge-item:hover img { transform: scale(1.2); }
+.badge-item:hover img {
+  transform: scale(1.22);
+}
 
 /* Badge tooltip */
 .badge-item .badge-tooltip {
   position: absolute;
-  bottom: calc(100% + 6px);
+  bottom: calc(100% + 8px);
   left: 50%;
   transform: translateX(-50%) translateY(4px);
-  background: rgba(10, 10, 15, 0.82);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  border: 1px solid rgba(172, 200, 255, 0.12);
+  background: rgba(10, 10, 15, 0.9);
+  border: 1px solid rgba(172, 200, 255, 0.2);
   border-radius: 6px;
   padding: 4px 8px;
   white-space: nowrap;
   font-size: 11px;
   font-weight: 500;
-  letter-spacing: 0.5px;
   color: #acc8ff;
   pointer-events: none;
   opacity: 0;
@@ -367,18 +516,25 @@ body {
   z-index: 99;
 }
 
-.badge-item:hover .badge-tooltip {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
+@media (hover: hover) {
+  .badge-item:hover .badge-tooltip {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
 }
 
-/* Status text — typewriter effect (cursor "|" added via ::after) */
+/* Status text — Typewriter effect (Rock solid centering, no layout shifts) */
 #profile-status {
-  margin-top: 4px;
-  min-height: 18px;
-  color: rgba(172, 200, 255, 0.7);
-  font-weight: 570;
-  font-size: 17px;
+  width: 100%;
+  margin-top: 8px;
+  min-height: 40px;
+  color: rgba(172, 200, 255, 0.75);
+  font-weight: 550;
+  font-size: 15.5px;
+  line-height: 1.45;
+  text-align: center;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 @keyframes blink-cursor {
@@ -390,22 +546,34 @@ body {
   content: "|";
   display: inline-block;
   margin-left: 2px;
-  color: rgba(172, 200, 255, 0.8);
+  color: rgba(172, 200, 255, 0.85);
+  font-weight: 400;
   animation: blink-cursor 0.8s infinite;
 }
 
 
 /* ============================================================
-   DISCORD PRESENCE BOX
+   DISCORD PRESENCE BOX (Liquid Glass Capsule)
    ============================================================ */
 #discord-presence {
+  width: 100%;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  background: var(--discord-box-background, rgba(255, 255, 255, 0.05));
-  border: var(--discord-box-border, none);
-  border-radius: var(--discord-box-radius, 30px);
+  gap: 14px;
+  padding: 12px 18px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.015) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-top: 1.2px solid rgba(255, 255, 255, 0.32);
+  border-radius: var(--discord-box-radius, 24px);
+  box-shadow: 
+    0 10px 25px -5px rgba(0, 0, 0, 0.4),
+    inset 0 1px 1px rgba(255, 255, 255, 0.28),
+    inset 0 0 20px rgba(255, 255, 255, 0.02);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+#discord-presence:hover {
+  border-color: rgba(255, 255, 255, 0.28);
 }
 
 /* Avatar with status icon overlay */
@@ -415,93 +583,247 @@ body {
 }
 
 #discord-avatar {
-  width: var(--discord-avatar-size, 36px);
-  height: var(--discord-avatar-size, 36px);
+  width: var(--discord-avatar-size, 46px);
+  height: var(--discord-avatar-size, 46px);
   border-radius: 50%;
   object-fit: cover;
-  border: var(--discord-avatar-border, 2px solid rgba(249, 184, 184, 0.2));
+  border: 2px solid rgba(249, 184, 184, 0.25);
   display: block;
 }
 
-/* Status icon (online / idle / dnd / offline) — bottom-right corner */
+/* Status icon badge */
 #discord-status-icon {
   position: absolute;
-  bottom: 4px;
-  right: 4px;
-  width: 17px;
-  height: 17px;
+  bottom: 0;
+  right: 0;
+  width: 15px;
+  height: 15px;
   object-fit: cover;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(10, 10, 15, 0.85);
 }
 
 #discord-info {
   display: flex;
   flex-direction: column;
-  font-size: 12px;
-  line-height: 1.4;
+  align-items: flex-start;
+  text-align: left;
+  font-size: 13px;
+  line-height: 1.35;
   overflow: hidden;
+  min-width: 0;
 }
 
 #discord-username {
   color: #acc8ff;
-  font-weight: 550;
-  font-size: 18.5px;
-}
-
-#discord-activity {
-  color: rgba(172, 200, 255, 0.6);
-  font-style: italic;
-  font-weight: 400;
-  font-size: 13.5px;
+  font-weight: 600;
+  font-size: 17px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+#discord-activity {
+  color: rgba(172, 200, 255, 0.65);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 
 /* ============================================================
-   SOCIAL LINKS
+   SOCIAL LINKS (Liquid Floating Tiles)
    ============================================================ */
 #social-links {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 14px;
-  margin-top: 14px;
-  min-height: 28px;
+  gap: 16px;
+  margin-top: 2px;
+  min-height: 32px;
+  width: 100%;
 }
 
 #social-links a {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   color: inherit;
   text-decoration: none;
-  opacity: 0.75;
-  padding: 8px; /* Added padding to give space for the background/border */
-  border-radius: 12px; /* Soft corners for the hover box */
-  border: 1px solid transparent; /* Invisible border by default */
-  transition: opacity 0.3s ease, transform 0.2s cubic-bezier(0.2, 0.72, 0.12, 1), background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  padding: 9px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-top: 1.2px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+  transition: transform 0.22s cubic-bezier(0.2, 0.72, 0.12, 1), background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
 #social-links a:hover {
-  opacity: 1;
-  transform: translateY(-3px) scale(1.05);
-  background-color: rgba(172, 200, 255, 0.05); /* Subtle background glow */
-  border-color: rgba(172, 200, 255, 0.2); /* Soft blue border */
-  box-shadow: 0 4px 15px rgba(172, 200, 255, 0.1), inset 0 0 10px rgba(172, 200, 255, 0.05); /* Glowing drop shadow */
+  transform: translateY(-3px) scale(1.08);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.04) 100%);
+  border-color: rgba(255, 255, 255, 0.42);
+  box-shadow: 
+    0 10px 28px rgba(0, 0, 0, 0.45), 
+    0 0 16px rgba(172, 200, 255, 0.22), 
+    inset 0 1px 1px rgba(255, 255, 255, 0.5);
 }
 
 #social-links a:active {
   transform: translateY(0) scale(0.95);
-  box-shadow: 0 2px 5px rgba(172, 200, 255, 0.05);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
 }
 
-/* drop-shadow follows the icon's real silhouette (transparent background) */
 .social-icon {
   display: block;
-  width: var(--icon-size, 32px);
-  height: var(--icon-size, 32px);
+  width: var(--icon-size, 30px);
+  height: var(--icon-size, 30px);
   object-fit: contain;
   border-radius: var(--icon-border-radius, 0);
-  filter: drop-shadow(var(--icon-glow-color) 1px 0 7px);
+  filter: drop-shadow(var(--icon-glow-color, rgba(172, 200, 255, 0.4)) 0 0 6px);
+}
+
+
+/* ============================================================
+   TABLET RESPONSIVENESS (481px to 768px)
+   ============================================================ */
+@media (min-width: 481px) and (max-width: 768px) {
+  #profile-card {
+    width: min(90%, 390px);
+    padding: 26px 22px;
+    gap: 20px;
+    border-radius: 48px;
+  }
+
+  #avatar-wrapper {
+    width: 70px;
+    height: 70px;
+  }
+
+  #name-text {
+    font-size: 24px;
+  }
+
+  #profile-status {
+    font-size: 14.5px;
+    min-height: 42px;
+  }
+
+  #discord-presence {
+    padding: 11px 16px;
+    gap: 12px;
+  }
+
+  #discord-avatar {
+    width: 42px;
+    height: 42px;
+  }
+}
+
+
+/* ============================================================
+   MOBILE RESPONSIVENESS (<= 480px)
+   ============================================================ */
+@media (max-width: 480px) {
+  #profile-card {
+    width: min(92%, 350px);
+    padding: 22px 16px;
+    gap: 18px;
+    border-radius: 38px; /* Balanced radius: never pinches social icons */
+  }
+
+  #avatar-wrapper {
+    width: 64px;
+    height: 64px;
+  }
+
+  #name-text {
+    font-size: 21px;
+    line-height: 1.25;
+  }
+
+  #badges {
+    padding: 4px 10px;
+    gap: 5px;
+  }
+
+  .badge-item img {
+    width: 18px;
+    height: 18px;
+  }
+
+  #profile-status {
+    font-size: 13.5px;
+    line-height: 1.4;
+    min-height: 44px;
+    padding: 0 4px;
+  }
+
+  #discord-presence {
+    padding: 10px 14px;
+    gap: 12px;
+    border-radius: 20px;
+  }
+
+  #discord-avatar {
+    width: 40px;
+    height: 40px;
+  }
+
+  #discord-username {
+    font-size: 16px;
+  }
+
+  #discord-activity {
+    font-size: 12.5px;
+  }
+
+  #social-links {
+    gap: 14px;
+    margin-top: 0;
+  }
+
+  #social-links a {
+    padding: 8px;
+    border-radius: 12px;
+  }
+
+  .social-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  #volume-btn {
+    width: 38px;
+    height: 38px;
+    font-size: 15px;
+  }
+}
+
+
+/* ============================================================
+   SHORT SCREEN ADAPTABILITY (Mobile Landscape / Low Height)
+   Prevents card cutoff on landscape phones or short browser windows
+   ============================================================ */
+@media (max-height: 560px) {
+  #main-content {
+    overflow-y: auto;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 20px 10px;
+  }
+
+  #profile-card {
+    position: relative;
+    top: auto;
+    left: auto;
+    transform: perspective(var(--card-tilt-perspective, 1000px)) rotateX(0deg) rotateY(0deg);
+    margin: 15px auto;
+  }
 }

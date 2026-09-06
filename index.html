@@ -2,8 +2,11 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Profile</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+    <title>Profile Link in Bio</title>
+    <meta name="description" content="Interactive aesthetic profile card with liquid glass effect, beat-synced visualizer, Discord status, and social links." />
+    <meta property="og:title" content="Profile Link in Bio" />
+    <meta property="og:description" content="Interactive aesthetic profile card with liquid glass effect, beat-synced visualizer, Discord status, and social links." />
     <link rel="icon" href="assets/favicon.png" />
     <link rel="stylesheet" href="css/style.css" />
   </head>
@@ -11,7 +14,10 @@
 
     <!-- Entry screen — first thing visible on load -->
     <div id="entry-screen">
-      <div id="entry-symbol"></div>
+      <div id="entry-container">
+        <div id="entry-symbol"></div>
+        <div id="entry-hint">click to enter</div>
+      </div>
     </div>
 
     <div id="main-content">
@@ -20,7 +26,7 @@
            JS changes the seed every 40ms to animate it. -->
       <svg style="display:none" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <filter id="name-filter" x="-10%" y="-20%" width="120%" height="140%">
+          <filter id="name-filter" x="-40%" y="-40%" width="180%" height="180%">
             <feTurbulence id="name-turb" type="turbulence"
               baseFrequency="0.008 1.1" numOctaves="1" seed="1" result="noise" />
             <feDisplacementMap id="name-disp"
@@ -30,9 +36,9 @@
         </defs>
       </svg>
 
-      <!-- Background video — starts (with audio) on entry click -->
-      <video id="bg-video" muted loop playsinline>
-        <source id="bg-video-source" src="" type="video/mp4" />
+      <!-- Background video — waits for entry click -->
+      <video id="bg-video" src="assets/background.mp4" loop playsinline webkit-playsinline preload="auto">
+        <source id="bg-video-source" src="assets/background.mp4" type="video/mp4" />
       </video>
 
       <!-- Background particles canvas -->

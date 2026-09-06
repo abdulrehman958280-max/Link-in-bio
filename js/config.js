@@ -10,7 +10,7 @@ const CONFIG = {
   profileName:   "Abdul Rahman",      // name shown on the card
   nameTooltip:   "Oñooo",         // tooltip on hover over the name
   nameEffect:    "noise",         // "noise" = TV interference | "none" = plain text
-  statusText:    "🏃🏿‍➡️ Isso é muita areia hoje...", // text below the name (typewriter effect)
+  statusText:    "😎 Just Forget My Existence.....", // text below the name (typewriter effect)
   tabTitle:      "@Abdul Rahman",      // animated browser tab title
   entrySymbol:   "⛧",            // symbol shown on the entry screen
 
@@ -58,7 +58,7 @@ const CONFIG = {
   // Used if useRealtimeDiscord is false or Lanyard cannot connect
   // ----------------------------------------------------------
   discordUsername: "Jofagg_",
-  discordStatus:   "acalme-se vadia...",
+  discordStatus:   "Unavailable",
   discordAvatar:   "assets/discord-avatar.jpg",
   discordAvatarSize:   "74px",
   discordAvatarBorder: "2px solid rgba(200, 27, 27, 0.15)",
@@ -71,10 +71,8 @@ const CONFIG = {
   // ----------------------------------------------------------
   socialLinks: [
     { name: "Instagram", url: "https://www.instagram.com/_a.r.malik_/?utm_source=gr&r=nametag",         icon: "assets/icons/instagram.png" },
-    { name: "Discord",   url: "https://discord.com/users/Jofagg_", icon: "assets/icons/discord.png"   },
-    { name: "TikTok",    url: "https://www.tiktok.com/user",           icon: "assets/icons/tiktok.png"    },
-    { name: "OnlyFans",  url: "https://onlyfans.com/user",          icon: "assets/icons/onlyfans.png"  },
-    { name: "Github",  url: "https://github.com/user",          icon: "assets/icons/github.png"  },
+    { name: "Discord",   url: "https://discord.gg/6zUVRf87", icon: "assets/icons/discord.png"   },
+    { name: "Github",  url: "https://github.com/abdulrehman958280-max", icon: "assets/icons/github.png"  },
 
   ],
   iconSize:         "36px",
